@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM2Nexus - Values, W/F/L Calculator & Live Trading</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0b0f19; color: #f8fafc; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Navbar */
+        .navbar { background: #111827; border-bottom: 1px solid #1f2937; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 40; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 22px; font-weight: 900; background: linear-gradient(90deg, #a855f7, #ec4899, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 9px 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; color: #fff; background: #1f2937; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-active { background: #9333ea; }
+        .btn-chat { background: #059669; }
+        .btn-gradient { background: linear-gradient(90deg, #9333ea, #db2777); width: 100%; padding: 12px; font-size: 14px; }
+
+        /* Main Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+        .hidden { display: none !important; }
+
+        /* Controls Bar */
+        .header-box { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        .input, .select { background: #030712; border: 1px solid #374151; color: #fff; padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+        .input:focus, .select:focus { border-color: #a855f7; }
+
+        /* Weapon Cards Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+        .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
+        .card:hover { transform: translateY(-3px); border-color: #374151; }
+        .tier-Ancient { border-top: 4px solid #a855f7; }
+        .tier-Chroma { border-top: 4px solid #eab308; }
+        .tier-Godly { border-top: 4px solid #ec4899; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .icon-box { font-size: 32px; background: #030712; border: 1px solid #1f2937; padding: 10px; border-radius: 10px; }
+        .tier-badge { font-size: 11px; background: #1f2937; padding: 4px 10px; border-radius: 20px; color: #cbd5e1; font-weight: 700; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #94a3b8; }
+        .val-num { color: #c084fc; font-weight: 800; }
+        .card-actions { display: flex; gap: 8px; margin-top: 14px; }
+        .mini-btn { flex: 1; background: #1f2937; border: 1px solid #374151; color: #e2e8f0; padding: 6px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .mini-btn:hover { border-color: #a855f7; background: #2e1065; }
+
+        /* Calculator & Trade Hub */
+        .calc-box { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 20px; margin-bottom: 28px; }
+        .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: center; margin-top: 16px; }
+        .offer-panel { background: #030712; border: 1px solid #1f2937; border-radius: 12px; padding: 14px; }
+        .offer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 800; font-size: 14px; }
+        .slots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; min-height: 110px; }
+        .slot-filled { background: #111827; border: 1px solid #374151; padding: 8px 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; cursor: pointer; }
+        .slot-filled:hover { border-color: #ef4444; }
+        .slot-empty { border: 1px dashed #1f2937; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #475569; }
+        .verdict-box { text-align: center; padding: 16px; background: #030712; border: 1px solid #1f2937; border-radius: 12px; }
+        .verdict-text { font-size: 26px; font-weight: 900; margin: 10px 0; }
+
+        /* Live Trade Feed */
+        .trade-card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+        .trade-items { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .pill { background: #030712; border: 1px solid #1f2937; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+        .badge-have { background: #064e3b; color: #34d399; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
+        .badge-want { background: #1e3a8a; color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
+
+        /* Slide-Out Chat Drawer */
+        .chat-drawer { position: fixed; top: 0; right: 0; width: 360px; max-width: 100%; height: 100%; background: #111827; border-left: 1px solid #1f2937; z-index: 100; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s ease; box-shadow: -10px 0 30px rgba(0,0,0,0.6); }
+        .chat-drawer.open { transform: translateX(0); }
+        .chat-header { padding: 14px; background: #030712; border-bottom: 1px solid #1f2937; display: flex; justify-content: space-between; align-items: center; }
+        .chat-tabs { display: flex; gap: 6px; padding: 8px 12px; background: #0b0f19; border-bottom: 1px solid #1f2937; overflow-x: auto; }
+        .tab-pill { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: none; background: #1f2937; color: #94a3b8; white-space: nowrap; }
+        .tab-pill.active { background: #9333ea; color: #fff; }
+        .chat-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg-bubble { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+        .msg-self { align-self: flex-end; background: #9333ea; color: #fff; }
+        .msg-other { align-self: flex-start; background: #1f2937; color: #e2e8f0; }
+        .msg-sys { align-self: center; background: #030712; border: 1px solid #1f2937; color: #94a3b8; font-size: 11px; padding: 6px 10px; border-radius: 8px; text-align: center; }
+        .quick-bar { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #1f2937; overflow-x: auto; background: #0b0f19; }
+        .chat-form { display: flex; gap: 8px; padding: 12px; background: #030712; border-top: 1px solid #1f2937; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="logo">MM2NEXUS</div>
+        <div class="nav-btns">
+            <button id="btnTabValues" class="btn btn-active" onclick="switchTab('values')">📊 Value List</button>
+            <button id="btnTabTrading" class="btn" onclick="switchTab('trading')">⚖️ Trade Hub & W/F/L</button>
+            <button class="btn btn-chat" onclick="openChat('Global Lobby')">💬 Live Chat</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 1. VALUE LIST SECTION -->
+        <section id="secValues">
+            <div class="header-box">
+                <div>
+                    <h1 style="font-size: 20px; font-weight: 800;">Murder Mystery 2 Official Value List</h1>
+                    <p style="font-size: 13px; color: #94a3b8;">Click "+ Have" or "+ Want" on any weapon to load it into the Trade Calculator.</p>
+                </div>
+                <div class="controls">
+                    <input type="text" id="searchInput" class="input" placeholder="🔍 Search weapons..." oninput="renderWeapons()">
+                    <select id="tierFilter" class="select" onchange="renderWeapons()">
+                        <option value="All">All Tiers</option>
+                        <option value="Ancient">Ancients</option>
+                        <option value="Chroma">Chromas</option>
+                        <option value="Godly">Godlies</option>
+                    </select>
+                    <select id="sortFilter" class="select" onchange="renderWeapons()">
+                        <option value="high">Value: High to Low</option>
+                        <option value="low">Value: Low to High</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="weaponsGrid" class="grid"></div>
+        </section>
+
+        <!-- 2. TRADING & W/F/L CALCULATOR SECTION -->
+        <section id="secTrading" class="hidden">
+            <div class="calc-box">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #1f2937; padding-bottom:12px;">
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 800;">Create Trade & W/F/L Calculator</h2>
+                        <p style="font-size: 12px; color: #94a3b8;">Select up to 4 weapons on each side to check fairness or post to the live feed.</p>
+                    </div>
+                    <input type="text" id="usernameInput" class="input" placeholder="Your Roblox Username">
+                </div>
+
+                <div class="calc-grid">
+                    <!-- YOUR OFFER -->
+                    <div class="offer-panel">
+                        <div class="offer-header">
+                            <span style="color:#34d399;">🟢 YOUR OFFER (HAVE)</span>
+                            <span id="yourTotal">Value: 0</span>
+                        </div>
+                        <div id="yourSlots" class="slots-grid"></div>
+                        <select id="selectYours" class="select" style="width:100%;" onchange="addWeaponToCalc('yours', this.value); this.value='';">
+                            <option value="">+ Add Weapon to Your Offer</option>
+                        </select>
+                    </div>
+
+                    <!-- VERDICT -->
+                    <div class="verdict-box">
+                        <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Trade Verdict</div>
+                        <div id="verdictText" class="verdict-text">FAIR (0)</div>
+                        <button class="btn btn-gradient" onclick="publishTrade()">🚀 Post Trade to Live Hub</button>
+                        <button class="btn" style="margin-top:8px; width:100%; font-size:11px;" onclick="resetCalc()">Reset Calculator</button>
+                    </div>
+
+                    <!-- THEIR OFFER -->
+                    <div class="offer-panel">
+                        <div class="offer-header">
+                            <span style="color:#60a5fa;">🔵 THEIR OFFER (WANT)</span>
+                            <span id="theirTotal">Value: 0</span>
+                        </div>
+                        <div id="theirSlots" class="slots-grid"></div>
+                        <select id="selectTheirs" class="select" style="width:100%;" onchange="addWeaponToCalc('theirs', this.value); this.value='';">
+                            <option value="">+ Add Weapon You Want</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 12px;">🟢 Live Active Trades</h2>
+            <div id="tradeFeed"></div>
+        </section>
+    </div>
+
+    <!-- 3. SLIDE-OUT CHAT DRAWER -->
+    <div id="chatDrawer" class="chat-drawer">
+        <div class="chat-header">
+            <div>
+                <div id="chatTitle" style="font-weight:800; color:#c084fc;">🌐 Global Lobby</div>
+                <div style="font-size:11px; color:#94a3b8;">Live Trade Negotiation</div>
+            </div>
+            <button class="btn" onclick="closeChat()">✕</button>
+        </div>
+        <div id="chatTabs" class="chat-tabs"></div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="quick-bar">
+            <button class="tab-pill" onclick="sendQuick('Add me on Roblox!')">👋 Add me</button>
+            <button class="tab-pill" onclick="sendQuick('Can you add a small Godly?')">➕ Can you add?</button>
+            <button class="tab-pill" onclick="sendQuick('Deal! Join my server.')">✅ Deal!</button>
+        </div>
+        <form class="chat-form" onsubmit="handleChatSubmit(event)">
+            <input type="text" id="chatInput" class="input" style="flex:1;" placeholder="Type a message...">
+            <button type="submit" class="btn btn-active">Send</button>
+        </form>
+    </div>
+
+    <script>
+        var weaponsData = [
+            { id: 1, name: "Gingerscope", tier: "Ancient", value: 9200, demand: 10, status: "Rising", icon: "🎯" },
+            { id: 2, name: "Travelers Axe", tier: "Ancient", value: 4800, demand: 9, status: "Overpaid For", icon: "🪓" },
+            { id: 3, name: "Chroma Watergun", tier: "Chroma", value: 2400, demand: 9, status: "Rising", icon: "🔫" },
+            { id: 4, name: "Corrupt", tier: "Godly", value: 1150, demand: 8, status: "Stable", icon: "🗡️" },
+            { id: 5, name: "Harvester", tier: "Ancient", value: 950, demand: 9, status: "Overpaid For", icon: "🏹" },
+            { id: 6, name: "Icepiercer", tier: "Ancient", value: 850, demand: 8, status: "Stable", icon: "❄️" },
+            { id: 7, name: "Sakura", tier: "Godly", value: 580, demand: 8, status: "Rising", icon: "🌸" },
+            { id: 8, name: "Darkshot", tier: "Godly", value: 510, demand: 7, status: "Stable", icon: "🌑" },
+            { id: 9, name: "Bat", tier: "Godly", value: 380, demand: 6, status: "Fluctuating", icon: "🦇" },
+            { id: 10, name: "Spectre", tier: "Godly", value: 160, demand: 7, status: "Stable", icon: "👻" },
+            { id: 11, name: "Heartblade", tier: "Godly", value: 130, demand: 8, status: "Overpaid For", icon: "💖" },
+            { id: 12, name: "Chroma Lightbringer", tier: "Chroma", value: 125, demand: 7, status: "Stable", icon: "✨" },
+            { id: 13, name: "Icebreaker", tier: "Ancient", value: 125, demand: 7, status: "Stable", icon: "🧊" },
+            { id: 14, name: "Elderwood Scythe", tier: "Ancient", value: 90, demand: 6, status: "Stable", icon: "🔮" },
+            { id: 15, name: "Luger", tier: "Godly", value: 70, demand: 6, status: "Stable", icon: "🔫" },
+            { id: 16, name: "Batwing", tier: "Ancient", value: 65, demand: 7, status: "Stable", icon: "🦇" }
+        ];
+
+        var yourOffer = [];
+        var theirOffer = [];
+
+        var activeTrades = [
+            { user: "RobloxTrader99", have: [weaponsData[4]], want: [weaponsData[7], weaponsData[8]], time: "2 mins ago" },
+            { user: "VampireMM2", have: [weaponsData[11], weaponsData[13]], want: [weaponsData[9], weaponsData[15]], time: "5 mins ago" },
+            { user: "GodlyCollectorX", have: [weaponsData[0]], want: [weaponsData[1], weaponsData[2], weaponsData[4]], time: "9 mins ago" }
+        ];
+
+        var currentRoom = "Global Lobby";
+        var chatRooms = {
+            "Global Lobby": [
+                { sender: "GodlyCollectorX", text: "Trading Gingerscope for Travelers Axe + adds!", self: false },
+                { sender: "RobloxTrader99", text: "Looking for Darkshot + Bat for my Harvester! Click Chat on my trade.", self: false }
+            ]
+        };
+
+        function switchTab(tab) {
+            document.getElementById('secValues').className = (tab === 'values') ? '' : 'hidden';
+            document.getElementById('secTrading').className = (tab === 'trading') ? '' : 'hidden';
+            document.getElementById('btnTabValues').className = (tab === 'values') ? 'btn btn-active' : 'btn';
+            document.getElementById('btnTabTrading').className = (tab === 'trading') ? 'btn btn-active' : 'btn';
+        }
+
+        function renderWeapons() {
+            var search = document.getElementById('searchInput').value.toLowerCase();
+            var tier = document.getElementById('tierFilter').value;
+            var sort = document.getElementById('sortFilter').value;
+            var grid = document.getElementById('weaponsGrid');
+
+            var list = weaponsData.filter(function(w) {
+                return (tier === 'All' || w.tier === tier) && w.name.toLowerCase().indexOf(search) !== -1;
+            });
+
+            list.sort(function(a, b) {
+                return sort === 'high' ? (b.value - a.value) : (a.value - b.value);
+            });
+
+            var html = '';
+            for (var i = 0; i < list.length; i++) {
+                var w = list[i];
+                html += '<div class="card tier-' + w.tier + '">' +
+                    '<div>' +
+                        '<div class="card-top">' +
+                            '<span class="icon-box">' + w.icon + '</span>' +
+                            '<span class="tier-badge">' + w.tier + '</span>' +
+                        '</div>' +
+                        '<h3 style="font-size:17px; font-weight:800; margin-bottom:8px;">' + w.name + '</h3>' +
+                        '<div class="stat-row"><span>Supreme Value:</span><span class="val-num">' + w.value.toLocaleString() + '</span></div>' +
+                        '<div class="stat-row"><span>Demand:</span><span>' + w.demand + ' / 10</span></div>' +
+                        '<div class="stat-row"><span>Status:</span><span style="color:#34d399;">' + w.status + '</span></div>' +
+                    '</div>' +
+                    '<div class="card-actions">' +
+                        '<button class="mini-btn" onclick="quickAdd(' + w.id + ', \'yours\')">+ Have</button>' +
+                        '<button class="mini-btn" onclick="quickAdd(' + w.id + ', \'theirs\')">+ Want</button>' +
+                    '</div>' +
+                '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        function quickAdd(id, side) {
+            addWeaponToCalc(side, id);
+            switchTab('trading');
+        }
+
+        function populateDropdowns() {
+            var opts = '';
+            for (var i = 0; i < weaponsData.length; i++) {
+                var w = weaponsData[i];
+                opts += '<option value="' + w.id + '">' + w.icon + ' ' + w.name + ' (' + w.value + ')</option>';
+            }
+            document.getElementById('selectYours').innerHTML += opts;
+            document.getElementById('selectTheirs').innerHTML += opts;
+        }
+
+        function addWeaponToCalc(side, id) {
+            if (!id) return;
+            var item = null;
+            for (var i = 0; i < weaponsData.length; i++) {
+                if (weaponsData[i].id == id) item = weaponsData[i];
+            }
+            if (!item) return;
+
+            if (side === 'yours' && yourOffer.length < 4) yourOffer.push(item);
+            if (side === 'theirs' && theirOffer.length < 4) theirOffer.push(item);
+            renderCalculator();
+        }
+
+        function removeCalcItem(side, idx) {
+            if (side === 'yours') yourOffer.splice(idx, 1);
+            else theirOffer.splice(idx, 1);
+            renderCalculator();
+        }
+
+        function resetCalc() {
+            yourOffer = [];
+            theirOffer = [];
+            renderCalculator();
+        }
+
+        function renderCalculator() {
+            function buildSlots(arr, side) {
+                var s = '';
+                for (var i = 0; i < 4; i++) {
+                    if (arr[i]) {
+                        s += '<div class="slot-filled" onclick="removeCalcItem(\'' + side + '\', ' + i + ')">' +
+                            '<span>' + arr[i].icon + ' ' + arr[i].name + '</span>' +
+                            '<span style="color:#c084fc; font-weight:800;">' + arr[i].value + ' ✕</span>' +
+                        '</div>';
+                    } else {
+                        s += '<div class="slot-empty">Empty Slot</div>';
+                    }
+                }
+                return s;
+            }
+
+            document.getElementById('yourSlots').innerHTML = buildSlots(yourOffer, 'yours');
+            document.getElementById('theirSlots').innerHTML = buildSlots(theirOffer, 'theirs');
+
+            var ySum = 0, tSum = 0;
+            for (var i = 0; i < yourOffer.length; i++) ySum += yourOffer[i].value;
+            for (var j = 0; j < theirOffer.length; j++) tSum += theirOffer[j].value;
+
+            document.getElementById('yourTotal').innerText = 'Value: ' + ySum.toLocaleString();
+            document.getElementById('theirTotal').innerText = 'Value: ' + tSum.toLocaleString();
+
+            var diff = tSum - ySum;
+            var vEl = document.getElementById('verdictText');
+            if (diff > 0) {
+                vEl.innerText = 'WIN (+' + diff.toLocaleString() + ')';
+                vEl.style.color = '#34d399';
+            } else if (diff < 0) {
+                vEl.innerText = 'LOSS (' + diff.toLocaleString() + ')';
+                vEl.style.color = '#f87171';
+            } else {
+                vEl.innerText = 'FAIR (0)';
+                vEl.style.color = '#f8fafc';
+            }
+        }
+
+        function publishTrade() {
+            if (yourOffer.length === 0 || theirOffer.length === 0) {
+                alert('Add at least 1 weapon to both sides first!');
+                return;
+            }
+            var uname = document.getElementById('usernameInput').value.trim() || ('Trader_' + Math.floor(100 + Math.random() * 899));
+            activeTrades.unshift({
+                user: uname,
+                have: yourOffer.slice(),
+                want: theirOffer.slice(),
+                time: 'Just now'
+            });
+            resetCalc();
+            renderTrades();
+        }
+
+        function renderTrades() {
+            var feed = document.getElementById('tradeFeed');
+            var html = '';
+            for (var i = 0; i < activeTrades.length; i++) {
+                var t = activeTrades[i];
+                var havePills = '', wantPills = '';
+                for (var h = 0; h < t.have.length; h++) havePills += '<span class="pill">' + t.have[h].icon + ' ' + t.have[h].name + '</span>';
+                for (var w = 0; w < t.want.length; w++) wantPills += '<span class="pill">' + t.want[w].icon + ' ' + t.want[w].name + '</span>';
+
+                html += '<div class="trade-card">' +
+                    '<div>' +
+                        '<div style="font-weight:800; font-size:14px;">👤 ' + t.user + '</div>' +
+                        '<div style="font-size:11px; color:#94a3b8;">' + t.time + '</div>' +
+                    '</div>' +
+                    '<div class="trade-items">' +
+                        '<span class="badge-have">HAVE</span>' + havePills +
+                        '<span style="font-weight:900; color:#64748b;">⇄</span>' +
+                        '<span class="badge-want">WANT</span>' + wantPills +
+                    '</div>' +
+                    '<button class="btn btn-active" onclick="startTradeChat(' + i + ')">💬 Chat / Offer</button>' +
+                '</div>';
+            }
+            feed.innerHTML = html;
+        }
+
+        // Chat Functions
+        function startTradeChat(tradeIndex) {
+            var trade = activeTrades[tradeIndex];
+            if (!chatRooms[trade.user]) {
+                chatRooms[trade.user] = [
+                    { sys: true, text: 'Started trade chat with ' + trade.user }
+                ];
+            }
+            openChat(trade.user);
+        }
+
+        function openChat(roomName) {
+            if (!chatRooms[roomName]) {
+                chatRooms[roomName] = [{ sys: true, text: 'Direct chat with ' + roomName }];
+            }
+            currentRoom = roomName;
+            document.getElementById('chatDrawer').className = 'chat-drawer open';
+            renderChatWindow();
+        }
+
+        function closeChat() {
+            document.getElementById('chatDrawer').className = 'chat-drawer';
+        }
+
+        function renderChatWindow() {
+            document.getElementById('chatTitle').innerText = (currentRoom === 'Global Lobby') ? '🌐 Global Lobby' : '💬 DM: ' + currentRoom;
+            
+            var tabsHtml = '';
+            var rooms = Object.keys(chatRooms);
+            for (var i = 0; i < rooms.length; i++) {
+                var r = rooms[i];
+                var activeClass = (r === currentRoom) ? 'tab-pill active' : 'tab-pill';
+                tabsHtml += '<button class="' + activeClass + '" onclick="openChat(\'' + r + '\')">' + r + '</button>';
+            }
+            document.getElementById('chatTabs').innerHTML = tabsHtml;
+
+            var msgs = chatRooms[currentRoom];
+            var msgHtml = '';
+            for (var j = 0; j < msgs.length; j++) {
+                var m = msgs[j];
+                if (m.sys) {
+                    msgHtml += '<div class="msg-sys">' + m.text + '</div>';
+                } else {
+                    var bubbleClass = m.self ? 'msg-bubble msg-self' : 'msg-bubble msg-other';
+                    msgHtml += '<div class="' + bubbleClass + '"><div style="font-size:10px; opacity:0.75; margin-bottom:2px;">' + m.sender + '</div>' + m.text + '</div>';
+                }
+            }
+            var box = document.getElementById('chatMessages');
+            box.innerHTML = msgHtml;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            var inp = document.getElementById('chatInput');
+            var txt = inp.value.trim();
+            if (!txt) return;
+            pushChatMessage(txt);
+            inp.value = '';
+        }
+
+        function sendQuick(txt) {
+            pushChatMessage(txt);
+        }
+
+        function pushChatMessage(txt) {
+            chatRooms[currentRoom].push({ sender: 'You', text: txt, self: true });
+            renderChatWindow();
+
+            if (currentRoom !== 'Global Lobby') {
+                var target = currentRoom;
+                setTimeout(function() {
+                    chatRooms[target].push({
+                        sender: target,
+                        text: "Sure! What's your Roblox username? Let's meet in MM2.",
+                        self: false
+                    });
+                    if (currentRoom === target) renderChatWindow();
+                }, 900);
+            }
+        }
+
+        // Start Everything Automatically
+        window.onload = function() {
+            renderWeapons();
+            populateDropdowns();
+            renderCalculator();
+            renderTrades();
+        };
+    </script>
+</body>
+</html>
